@@ -81,7 +81,7 @@ jobs:
 
       - name: Build 26.3 jar
         working-directory: source
-        run: ./gradlew :26.3:build --no-daemon --stacktrace
+        run: chmod +x gradlew && ./gradlew :26.3:build --no-daemon --stacktrace
 
       - name: Upload build outputs
         if: always()
