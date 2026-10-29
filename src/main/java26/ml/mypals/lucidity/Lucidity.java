@@ -2,6 +2,9 @@ package ml.mypals.lucidity;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.minecraft.client.Minecraft;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.ResourcePackActivationType;
 import net.fabricmc.loader.api.FabricLoader;
@@ -22,9 +25,17 @@ public final class Lucidity implements ClientModInitializer {
                         container,
                         ResourcePackActivationType.NORMAL));
 
+        HudElementRegistry.attachElementBefore(
+                VanillaHudElements.CHAT,
+                Identifier.fromNamespaceAndPath(LucidityModInfo.MOD_ID, "migration_status"),
+                (graphics, delta) -> graphics.text(Minecraft.getInstance().font, "Lucidity 26.3", 4, 4, 0xFFFFFFFF));
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             // Feature modules are registered here as they are migrated to 26.3.
         });
     }
 }
+
+
+
 
