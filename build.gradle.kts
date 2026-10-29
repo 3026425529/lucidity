@@ -32,7 +32,7 @@ tasks.processResources {
     inputs.property("version", project.version)
     inputs.property("minecraft", project.property("minecraft_dependency"))
     filesMatching("fabric.mod.json") {
-        expand("version" to project.version, "minecraft" to project.property("minecraft_dependency"))
+        expand(mapOf("version" to project.version, "minecraft" to project.property("minecraft_dependency")))
     }
 }
 
@@ -49,4 +49,5 @@ publishing {
         create<MavenPublication>("mavenJava") { from(components["java"]) }
     }
 }
+
 
