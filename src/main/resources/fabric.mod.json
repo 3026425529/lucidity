@@ -1,25 +1,21 @@
 {
   "schemaVersion": 1,
-  "id": "${id}",
+  "id": "lucidity",
   "version": "${version}",
-  "name": "${name}",
-  "description": "Visualize minecraft!",
+  "name": "Lucidity",
+  "description": "Visualize Minecraft.",
   "authors": ["Ryan100C"],
   "license": "MIT",
   "icon": "assets/lucidity/icon.png",
   "environment": "client",
   "entrypoints": {
-    "main": ["ml.mypals.lucidity.Lucidity"],
-    "modmenu": ["ml.mypals.lucidity.config.modmenu.LucidityModMenuImpl"]
+    "client": ["ml.mypals.lucidity.Lucidity"]
   },
-  "mixins": ["lucidity.mixins.json"],
-  "accessWidener": "accesswideners/${aw_file}",
   "depends": {
     "fabricloader": ">=0.20.1",
     "minecraft": "${minecraft}",
     "java": ">=25",
-    "fabric-api": "*",
-    "malilib": "*",
-    "ryansrenderingkit": "*"
+    "fabric-api": "*"
   }
 }
+
