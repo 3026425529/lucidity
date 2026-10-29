@@ -33,12 +33,6 @@ dependencies {
 }
 
 loom {
-    splitEnvironmentSourceSets()
-    mods {
-        create("lucidity") {
-            sourceSet(sourceSets.main.get())
-        }
-    }
     accessWidenerPath = file("src/main/resources/accesswideners/26.3.accesswidener")
 }
 
@@ -75,6 +69,7 @@ publishing {
         }
     }
 }
+
 
 
 
