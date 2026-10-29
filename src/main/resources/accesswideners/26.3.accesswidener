@@ -1,4 +1,4 @@
-accessWidener v2 named
+accessWidener v2 official
 accessible field net/minecraft/world/entity/boss/enderdragon/phases/DragonHoldingPatternPhase currentPath Lnet/minecraft/world/level/pathfinder/Path;
 accessible field net/minecraft/world/level/pathfinder/Path nodes Ljava/util/List;
 # accessible class net/minecraft/client/renderer/block/ModelBlockRenderer$AmbientOcclusionFace
@@ -25,3 +25,4 @@ accessible field net/minecraft/client/renderer/RenderType$CompositeState texture
 accessible field net/minecraft/client/renderer/RenderStateShard$TextureStateShard texture Ljava/util/Optional;
 accessible field net/minecraft/client/renderer/RenderStateShard setupState Ljava/lang/Runnable;
 accessible field net/minecraft/client/renderer/RenderStateShard clearState Ljava/lang/Runnable;
+
