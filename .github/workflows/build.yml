@@ -39,6 +39,7 @@ jobs:
           lines = settings_path.read_text().splitlines()
           for i, line in enumerate(lines):
               if '"1.21.9"' in line and i + 1 < len(lines) and lines[i + 1].strip() == ')':
+                  lines[i] = line.rstrip() + ','
                   lines.insert(i + 1, '            "26.3"')
                   break
           settings = nl.join(lines) + nl
