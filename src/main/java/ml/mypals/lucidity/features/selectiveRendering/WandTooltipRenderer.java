@@ -110,23 +110,96 @@ public class WandTooltipRenderer {
         }
         generateTooltip();
         int screenWidth = client.getWindow().getGuiScaledWidth();
-        int screenHeight = client.getWindow().getGui))
-                .add(right.scale(size / 2.0)));
+        int screenHeight = client.getWindow().getGuiScaledHeight();
+        int centerX = screenWidth / 2;
+        int centerY = screenHeight / 2;
 
-        return triangle;
+        int x = centerX - 50;
+        int y = centerY + 5;
+        int lineHeight = 10;
+
+        int maxTextWidth = 0;
+        for (ToolTipItem item : hudItems) {
+            int textWidth = client.font.width(item.text);
+            maxTextWidth = Math.max(maxTextWidth, textWidth);
+        }
+
+        x = centerX - maxTextWidth / 2;
+        for (ToolTipItem item : hudItems) {
+            if (item.icon != null) {
+                GlStateManager._enableBlend();
+                //? if >= 1.21.6 {
+                context.blit(RenderPipelines.GUI_TEXTURED, item.icon, x, y, 0, 0, 16, 16, 16, 16);
+                //?} else if >=1.21.3 {
+                /*context.blit(RenderType::guiTextured, item.icon, x, y, 0, 0, 16, 16, 16, 16);
+                *///?} else {
+                /*context.blit(item.icon, x, y, 0, 0, 16, 16, 16, 16);
+                *///?}
+                GlStateManager._disableBlend();
+            }
+
+            int textX = x + (item.icon != null ? 20 : 0);
+            context.drawString(client.font, item.text, textX, y + 4, item.color, true);
+
+            y += lineHeight;
+            renderWandModeIcon(context);
+        }
+
+
+
     }
+    public static void renderWandModeIcon(GuiGraphics context) {
+        Minecraft client = Minecraft.getInstance();
+        Player player = client.player;
+        WandActionsManager.WandApplyToMode wandApplyToMode = APPLY_TARGET_MODE.getOptionListValue();
+        assert player != null;
+        boolean shouldSelect = player.getMainHandItem().getItem() == wand;
+        if (!shouldSelect) {
+            return;
+        }
 
-    private int getColorWithAlpha(float alpha) {
-        int a = (int)(alpha * 255);
-        int r = (int) (EXPLOSION_DESTRUCTION_COLOR.getColor().r*255);
-        int g = (int) (EXPLOSION_DESTRUCTION_COLOR.getColor().g*255);
-        int b = (int) (EXPLOSION_DESTRUCTION_COLOR.getColor().b*255);
+        int screenHeight = client.getWindow().getGuiScaledHeight();
+        int iconWidth = 32;
 
-        return (a << 24) | (r << 16) | (g << 8) | b;
-    }
-    @Override
-    public void discard(){
-        subRayShape.discard();
-        super.discard();
+        int x = 0;
+        int y = screenHeight - 60;
+        GlStateManager._enableBlend();
+        //? if >= 1.21.6 {
+        context.blit(RenderPipelines.GUI_TEXTURED,ResourceLocation.fromNamespaceAndPath(MOD_ID, wandApplyToMode.getIcon()), x, y, 0, 0, iconWidth, iconWidth, iconWidth, iconWidth);
+        //?} else if >=1.21.3 {
+        /*context.blit(RenderType::guiTextured, ResourceLocation.fromNamespaceAndPath(MOD_ID, wandApplyToMode.getIcon()), x, y, 0, 0, iconWidth, iconWidth, iconWidth, iconWidth);
+        *///?} else {
+        /*context.blit(ResourceLocation.fromNamespaceAndPath(MOD_ID, wandApplyToMode.getIcon()), x, y, 0, 0, iconWidth, iconWidth, iconWidth, iconWidth);
+        *///?}
+        GlStateManager._disableBlend();
+        context.drawString(client.font, Component.translatable(wandApplyToMode.getTranslationKey()), x+iconWidth+2, y+(iconWidth/2), 0xFFFFFFE0, true);
+
+        String translationKey = "-";
+        ResourceLocation secondIcon = switch (wandApplyToMode) {
+            case WandActionsManager.WandApplyToMode.APPLY_TO_BLOCKS -> {
+                translationKey = BLOCK_RENDERING_MODE.getOptionListValue().getTranslationKey();
+                yield ResourceLocation.fromNamespaceAndPath(MOD_ID, BLOCK_RENDERING_MODE.getDefaultOptionListValue().getIcon());
+            }
+            case WandActionsManager.WandApplyToMode.APPLY_TO_ENTITIES -> {
+                translationKey = ENTITY_RENDERING_MODE.getOptionListValue().getTranslationKey();
+                yield ResourceLocation.fromNamespaceAndPath(MOD_ID, ENTITY_RENDERING_MODE.getDefaultOptionListValue().getIcon());
+            }
+            case WandActionsManager.WandApplyToMode.APPLY_TO_PARTICLES -> {
+                translationKey = PARTICLE_RENDERING_MODE.getOptionListValue().getTranslationKey();
+                yield ResourceLocation.fromNamespaceAndPath(MOD_ID, ENTITY_RENDERING_MODE.getDefaultOptionListValue().getIcon());
+            }
+        };
+        GlStateManager._enableBlend();
+        //? if >= 1.21.6 {
+        context.blit(RenderPipelines.GUI_TEXTURED, secondIcon, x , y + iconWidth/2, 0, 0, iconWidth, iconWidth, iconWidth, iconWidth);
+        //?} else if >=1.21.3 {
+        /*context.blit(RenderType::guiTextured, secondIcon, x , y + iconWidth/2, 0, 0, iconWidth, iconWidth, iconWidth, iconWidth);
+        *///?} else {
+        /*context.blit( secondIcon, x , y + iconWidth/2, 0, 0, iconWidth, iconWidth, iconWidth, iconWidth);
+        *///?}
+        GlStateManager._disableBlend();
+        context.drawString(client.font, Component.translatable(translationKey), x+iconWidth, y + iconWidth, 0xFFFFFFE0, true);
+
     }
 }
+
