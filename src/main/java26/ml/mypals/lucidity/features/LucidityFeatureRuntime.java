@@ -159,7 +159,7 @@ public final class LucidityFeatureRuntime {
         if (LucidityConfig.isEnabled(LucidityConfig.Feature.EXPLOSION_VISUALIZE)) {
             client.level.getEntities(client.player, client.player.getBoundingBox().inflate(16.0), entity ->
                             entity instanceof net.minecraft.world.entity.item.PrimedTnt
-                                    || entity instanceof net.minecraft.world.entity.vehicle.MinecartTNT
+                                    || entity instanceof net.minecraft.world.entity.vehicle.minecart.MinecartTNT
                                     || entity instanceof net.minecraft.world.entity.boss.enderdragon.EndCrystal
                                     || entity instanceof WitherBoss)
                     .forEach(entity -> {
@@ -206,6 +206,7 @@ public final class LucidityFeatureRuntime {
 
     public static long ticks() { return ticks; }
 }
+
 
 
 
