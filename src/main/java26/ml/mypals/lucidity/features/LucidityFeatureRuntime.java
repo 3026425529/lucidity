@@ -6,6 +6,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -34,6 +37,7 @@ public final class LucidityFeatureRuntime {
 
     public static void tick(Minecraft client) {
         ticks++;
+        LuciditySoundListener.tick();
         if (client.level == null || client.player == null) {
             targetBlock = null;
             targetName = "";
@@ -109,6 +113,9 @@ public final class LucidityFeatureRuntime {
             case MOB_SPAWN_VISUALIZE -> nearbyEntities + " nearby entities";
             case INVISIBLE_ENTITY_OVERRIDE -> nearbyInvisible + " invisible entities within 16 blocks";
             case MICROTIMING_MARKER_VISUALIZER -> "client tick " + ticks;
+            case EXPLOSION_VISUALIZE -> "explosive entities and beds/anchors monitored";
+            case IMAGE_RENDERING -> "image sources ready in config";
+            case SELECTIVE_RENDERING -> "gizmo selection overlay enabled";
         };
     }
 
@@ -116,6 +123,7 @@ public final class LucidityFeatureRuntime {
     public static void emitGizmos() {
         Minecraft client = Minecraft.getInstance();
         if (client.level == null || client.player == null) return;
+        LuciditySoundListener.emitGizmos();
         if (targetBlock != null) {
             for (LucidityConfig.Feature feature : LucidityConfig.Feature.values()) {
                 if (!LucidityConfig.isEnabled(feature)) continue;
@@ -143,6 +151,38 @@ public final class LucidityFeatureRuntime {
                         Gizmos.cuboid(entity.getBoundingBox(), GizmoStyle.stroke(0xFFFF55FF, 2.0F)).setAlwaysOnTop();
                         Gizmos.billboardTextOverMob(entity, 0xFFFFFFFF, "Ender Dragon", 0, 1.0F).setAlwaysOnTop();
                     });
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.WITHER_DESTRUCTION_VISUALIZE)) {
+            client.level.getEntities(client.player, client.player.getBoundingBox().inflate(64.0), entity -> entity instanceof WitherBoss)
+                    .forEach(entity -> Gizmos.cuboid(entity.getBoundingBox().inflate(3.0), GizmoStyle.stroke(0xFFFF4444, 2.0F)).setAlwaysOnTop());
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.EXPLOSION_VISUALIZE)) {
+            client.level.getEntities(client.player, client.player.getBoundingBox().inflate(16.0), entity ->
+                            entity instanceof net.minecraft.world.entity.item.PrimedTnt
+                                    || entity instanceof net.minecraft.world.entity.vehicle.MinecartTNT
+                                    || entity instanceof net.minecraft.world.entity.boss.enderdragon.EndCrystal
+                                    || entity instanceof WitherBoss)
+                    .forEach(entity -> {
+                        double radius = entity instanceof WitherBoss ? 7.0 : entity instanceof net.minecraft.world.entity.boss.enderdragon.EndCrystal ? 6.0 : 4.0;
+                        Gizmos.cuboid(entity.getBoundingBox().inflate(radius), GizmoStyle.stroke(0xFFFF6622, 1.5F)).setAlwaysOnTop();
+                        Gizmos.billboardTextOverMob(entity, 0xFFFFAA44, "Explosion r=" + radius, 0, 1.0F).setAlwaysOnTop();
+                    });
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.MOB_SPAWN_VISUALIZE)) {
+            Gizmos.cuboid(client.player.getBoundingBox().inflate(8.0, 4.0, 8.0), GizmoStyle.stroke(0xFF66FF66, 1.0F)).setAlwaysOnTop();
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.BODY_YAW)) {
+            var start = client.player.position().add(0.0, 0.2, 0.0);
+            var end = start.add(-Math.sin(Math.toRadians(client.player.getYRot())) * 1.5, 0.0, Math.cos(Math.toRadians(client.player.getYRot())) * 1.5);
+            Gizmos.arrow(start, end, 0xFF55FFFF, 2.0F).setAlwaysOnTop();
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.MICROTIMING_MARKER_VISUALIZER)) {
+            Gizmos.billboardText("tick " + ticks, client.player.position().add(0.0, 2.6, 0.0), net.minecraft.gizmos.TextGizmo.Style.whiteAndCentered()).setAlwaysOnTop();
+        }
+        if (targetBlock != null && LucidityConfig.isEnabled(LucidityConfig.Feature.FLUID_SOURCE_HIGHLIGHT)
+                && client.level.getFluidState(targetBlock).is(FluidTags.WATER) || targetBlock != null && LucidityConfig.isEnabled(LucidityConfig.Feature.FLUID_SOURCE_HIGHLIGHT)
+                && client.level.getFluidState(targetBlock).is(FluidTags.LAVA)) {
+            Gizmos.cuboid(targetBlock, GizmoStyle.stroke(0xFF3399FF, 2.0F)).setAlwaysOnTop();
         }
         if (LucidityConfig.isEnabled(LucidityConfig.Feature.INVISIBLE_ENTITY_OVERRIDE)) {
             client.level.getEntities(client.player, client.player.getBoundingBox().inflate(16.0), Entity::isInvisible)
