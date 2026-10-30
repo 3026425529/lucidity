@@ -26,8 +26,13 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Loads image entries from lucidity.json into client dynamic textures. Entries may be
  * local paths or HTTP(S) URLs; optional semicolon fields are accepted like the original
@@ -35,6 +40,12 @@ import java.util.Map;
 public final class LucidityImageRenderer {
     private static final Map<String, Identifier> TEXTURES = new LinkedHashMap<>();
     private static final Map<String, Placement> PLACEMENTS = new LinkedHashMap<>();
+    private static final ExecutorService IMAGE_LOADER = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "Lucidity-image-loader");
+        thread.setDaemon(true);
+        return thread;
+    });
+    private static final AtomicBoolean LOAD_IN_FLIGHT = new AtomicBoolean();
     private static String loadedSignature = "";
 
     private LucidityImageRenderer() {}
@@ -42,17 +53,16 @@ public final class LucidityImageRenderer {
     public static void tick(Minecraft client) {
         if (!LucidityConfig.isEnabled(LucidityConfig.Feature.IMAGE_RENDERING)) return;
         String signature = String.join("\u001f", LucidityConfig.imageSources());
-        if (!signature.equals(loadedSignature)) {
-            loadedSignature = signature;
-            reload(client);
+        if (!signature.equals(loadedSignature) && LOAD_IN_FLIGHT.compareAndSet(false, true)) {
+            startReload(client, signature, LucidityConfig.imageSources());
         }
     }
 
-    private static void reload(Minecraft client) {
-        TEXTURES.clear();
-        PLACEMENTS.clear();
-        int index = 0;
-        for (String entry : LucidityConfig.imageSources()) {
+    private static void startReload(Minecraft client, String signature, List<String> sources) {
+        IMAGE_LOADER.execute(() -> {
+            List<LoadedImage> loaded = new ArrayList<>();
+            int index = 0;
+            for (String entry : sources) {
             if (entry == null || entry.isBlank()) continue;
             String[] fields = entry.split(";", -1);
             String source = fields[0].trim();
@@ -60,20 +70,43 @@ public final class LucidityImageRenderer {
             try (InputStream input = open(source)) {
                 NativeImage image = NativeImage.read(input);
                 String name = fields.length > 1 && !fields[1].isBlank() ? fields[1].trim() : "image_" + index;
-                Identifier id = Identifier.fromNamespaceAndPath(LucidityModInfo.MOD_ID, "generated/" + safe(name));
-                client.getTextureManager().register(id, new DynamicTexture(() -> id.toString(), image));
-                TEXTURES.put(name, id);
-                if (fields.length >= 5) {
-                    Vec3 position = parseVector(fields[2], Vec3.ZERO);
-                    double[] rotation = fields.length > 3 ? parseNumbers(fields[3], 4) : new double[0];
-                    double[] scale = parseNumbers(fields[4], 2);
-                    PLACEMENTS.put(name, new Placement(position, Math.max(0.25, scale[0]), Math.max(0.25, scale[1]), rotation));
-                }
+                Placement placement = parsePlacement(fields);
+                loaded.add(new LoadedImage(name, image, placement));
                 index++;
             } catch (Exception error) {
                 Lucidity.LOGGER.warn("Unable to load Lucidity image {}", source, error);
             }
+            }
+            client.execute(() -> applyLoadedImages(signature, loaded));
+        });
+    }
+
+    private static void applyLoadedImages(String signature, List<LoadedImage> loaded) {
+        String currentSignature = String.join("\u001f", LucidityConfig.imageSources());
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.IMAGE_RENDERING) || !signature.equals(currentSignature)) {
+            loaded.forEach(image -> image.image.close());
+            LOAD_IN_FLIGHT.set(false);
+            return;
         }
+        TEXTURES.clear();
+        PLACEMENTS.clear();
+        for (LoadedImage image : loaded) {
+            Identifier id = Identifier.fromNamespaceAndPath(LucidityModInfo.MOD_ID, "generated/" + safe(image.name));
+            Minecraft.getInstance().getTextureManager().register(id, new DynamicTexture(() -> id.toString(), image.image));
+            TEXTURES.put(image.name, id);
+            if (image.placement != null) PLACEMENTS.put(image.name, image.placement);
+        }
+        loadedSignature = signature;
+        LOAD_IN_FLIGHT.set(false);
+    }
+
+    private static Placement parsePlacement(String[] fields) {
+        if (fields.length < 5) return null;
+        Vec3 position = parseVector(fields[2], Vec3.ZERO);
+        double[] rotation = fields.length > 3 ? parseNumbers(fields[3], 4) : new double[0];
+        double[] scale = parseNumbers(fields[4], 2);
+        if (scale.length < 2) return null;
+        return new Placement(position, Math.max(0.25, scale[0]), Math.max(0.25, scale[1]), rotation);
     }
 
     private static InputStream open(String source) throws Exception {
@@ -156,6 +189,8 @@ public final class LucidityImageRenderer {
     }
 
     private record Placement(Vec3 position, double width, double height, double[] rotation) {}
+
+    private record LoadedImage(String name, NativeImage image, Placement placement) {}
 }
 
 
