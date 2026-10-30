@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import ml.mypals.lucidity.config.LucidityConfig;
 import ml.mypals.lucidity.features.LucidityFeatureRuntime;
 import ml.mypals.lucidity.features.LuciditySoundListener;
+import ml.mypals.lucidity.features.LucidityImageRenderer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -40,6 +41,7 @@ public final class Lucidity implements ClientModInitializer {
                         graphics.text(Minecraft.getInstance().font, line, 4, y, 0xFFFFFFFF, true);
                         y += 10;
                     }
+                    LucidityImageRenderer.extractHud(graphics);
                 });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -48,6 +50,7 @@ public final class Lucidity implements ClientModInitializer {
                 soundListenerRegistered = true;
             }
             LucidityFeatureRuntime.tick(client);
+            LucidityImageRenderer.tick(client);
             while (OPEN_CONFIG.consumeClick()) {
                 client.setScreenAndShow(new ml.mypals.lucidity.config.LucidityConfigScreen(null));
             }
