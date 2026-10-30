@@ -13,6 +13,11 @@ import net.minecraft.gizmos.GizmoStyle;
 import net.minecraft.gizmos.TextGizmo;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -57,8 +62,9 @@ public final class LucidityImageRenderer {
                 TEXTURES.put(name, id);
                 if (fields.length >= 5) {
                     Vec3 position = parseVector(fields[2], Vec3.ZERO);
+                    double[] rotation = fields.length > 3 ? parseNumbers(fields[3], 4) : new double[0];
                     double[] scale = parseNumbers(fields[4], 2);
-                    PLACEMENTS.put(name, new Placement(position, Math.max(0.25, scale[0]), Math.max(0.25, scale[1])));
+                    PLACEMENTS.put(name, new Placement(position, Math.max(0.25, scale[0]), Math.max(0.25, scale[1]), rotation));
                 }
                 index++;
             } catch (Exception error) {
@@ -104,6 +110,26 @@ public final class LucidityImageRenderer {
         }
     }
 
+    /** Submits an actual camera-relative textured quad through the 26.3 feature collector. */
+    public static void submitWorldImages(SubmitNodeCollector output, Vec3 cameraPosition) {
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.IMAGE_RENDERING)) return;
+        for (Map.Entry<String, Placement> entry : PLACEMENTS.entrySet()) {
+            Identifier texture = TEXTURES.get(entry.getKey());
+            if (texture == null) continue;
+            Placement p = entry.getValue();
+            PoseStack pose = new PoseStack();
+            pose.translate(p.position.x - cameraPosition.x, p.position.y - cameraPosition.y, p.position.z - cameraPosition.z);
+            output.submitCustomGeometry(pose, RenderTypes.entityTranslucent(texture), (stackPose, consumer) -> {
+                float halfWidth = (float) p.width * 0.5F;
+                float halfHeight = (float) p.height * 0.5F;
+                consumer.addVertex(stackPose, -halfWidth, -halfHeight, 0.0F).setColor(255, 255, 255, 255).setUv(0.0F, 1.0F);
+                consumer.addVertex(stackPose, halfWidth, -halfHeight, 0.0F).setColor(255, 255, 255, 255).setUv(1.0F, 1.0F);
+                consumer.addVertex(stackPose, halfWidth, halfHeight, 0.0F).setColor(255, 255, 255, 255).setUv(1.0F, 0.0F);
+                consumer.addVertex(stackPose, -halfWidth, halfHeight, 0.0F).setColor(255, 255, 255, 255).setUv(0.0F, 0.0F);
+            });
+        }
+    }
+
     private static Vec3 parseVector(String raw, Vec3 fallback) {
         double[] values = parseNumbers(raw, 3);
         return values.length == 3 ? new Vec3(values[0], values[1], values[2]) : fallback;
@@ -121,7 +147,7 @@ public final class LucidityImageRenderer {
         }
     }
 
-    private record Placement(Vec3 position, double width, double height) {}
+    private record Placement(Vec3 position, double width, double height, double[] rotation) {}
 }
 
 
