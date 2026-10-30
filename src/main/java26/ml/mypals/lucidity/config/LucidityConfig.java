@@ -7,6 +7,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
 import ml.mypals.lucidity.Lucidity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,12 +26,30 @@ public final class LucidityConfig {
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("lucidity.json");
     private static final Map<Feature, Boolean> VALUES = new EnumMap<>(Feature.class);
     private static final List<String> IMAGE_SOURCES = new ArrayList<>();
+    private static final List<Area> SELECTIVE_AREAS = new ArrayList<>();
 
     static {
         reset();
     }
 
     private LucidityConfig() {}
+
+    public record Area(BlockPos min, BlockPos max) {
+        public Area {
+            min = new BlockPos(Math.min(min.getX(), max.getX()), Math.min(min.getY(), max.getY()), Math.min(min.getZ(), max.getZ()));
+            max = new BlockPos(Math.max(min.getX(), max.getX()), Math.max(min.getY(), max.getY()), Math.max(min.getZ(), max.getZ()));
+        }
+
+        public boolean contains(BlockPos pos) {
+            return pos.getX() >= min.getX() && pos.getX() <= max.getX()
+                    && pos.getY() >= min.getY() && pos.getY() <= max.getY()
+                    && pos.getZ() >= min.getZ() && pos.getZ() <= max.getZ();
+        }
+
+        public AABB box() {
+            return new AABB(min.getX(), min.getY(), min.getZ(), max.getX() + 1.0, max.getY() + 1.0, max.getZ() + 1.0);
+        }
+    }
 
     public enum Feature {
         SCULK_SENSOR_VISUALIZE("Sculk sensor range", "sculk_sensor_range"),
@@ -72,6 +92,7 @@ public final class LucidityConfig {
     public static void reset() {
         VALUES.clear();
         IMAGE_SOURCES.clear();
+        SELECTIVE_AREAS.clear();
         for (Feature feature : Feature.values()) VALUES.put(feature, false);
     }
 
@@ -112,6 +133,16 @@ public final class LucidityConfig {
                     if (entry.isJsonPrimitive()) IMAGE_SOURCES.add(entry.getAsString());
                 }
             }
+            SELECTIVE_AREAS.clear();
+            if (object.has("selective_areas") && object.get("selective_areas").isJsonArray()) {
+                for (var entry : object.getAsJsonArray("selective_areas")) {
+                    if (!entry.isJsonObject()) continue;
+                    JsonObject area = entry.getAsJsonObject();
+                    SELECTIVE_AREAS.add(new Area(
+                            new BlockPos(area.get("min_x").getAsInt(), area.get("min_y").getAsInt(), area.get("min_z").getAsInt()),
+                            new BlockPos(area.get("max_x").getAsInt(), area.get("max_y").getAsInt(), area.get("max_z").getAsInt())));
+                }
+            }
         } catch (Exception error) {
             Lucidity.LOGGER.warn("Unable to load Lucidity configuration", error);
         }
@@ -125,6 +156,18 @@ public final class LucidityConfig {
             JsonArray images = new JsonArray();
             IMAGE_SOURCES.forEach(images::add);
             object.add("images", images);
+            JsonArray areas = new JsonArray();
+            for (Area area : SELECTIVE_AREAS) {
+                JsonObject value = new JsonObject();
+                value.addProperty("min_x", area.min().getX());
+                value.addProperty("min_y", area.min().getY());
+                value.addProperty("min_z", area.min().getZ());
+                value.addProperty("max_x", area.max().getX());
+                value.addProperty("max_y", area.max().getY());
+                value.addProperty("max_z", area.max().getZ());
+                areas.add(value);
+            }
+            object.add("selective_areas", areas);
             Files.writeString(FILE, GSON.toJson(object));
         } catch (IOException error) {
             Lucidity.LOGGER.warn("Unable to save Lucidity configuration", error);
@@ -138,6 +181,23 @@ public final class LucidityConfig {
     public static void setImageSources(List<String> sources) {
         IMAGE_SOURCES.clear();
         IMAGE_SOURCES.addAll(sources);
+        save();
+    }
+
+    public static List<Area> selectiveAreas() {
+        return Collections.unmodifiableList(new ArrayList<>(SELECTIVE_AREAS));
+    }
+
+    public static void addSelectiveArea(BlockPos center) {
+        int minX = Math.floorDiv(center.getX(), 16) * 16;
+        int minZ = Math.floorDiv(center.getZ(), 16) * 16;
+        SELECTIVE_AREAS.add(new Area(new BlockPos(minX, center.getY() - 16, minZ),
+                new BlockPos(minX + 15, center.getY() + 16, minZ + 15)));
+        save();
+    }
+
+    public static void clearSelectiveAreas() {
+        SELECTIVE_AREAS.clear();
         save();
     }
 }
