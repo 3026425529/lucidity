@@ -193,13 +193,20 @@ public final class LucidityFeatureRuntime {
                 };
                 Gizmos.cuboid(targetBlock, GizmoStyle.strokeAndFill(color, 1.5F, (color & 0x00FFFFFF) | 0x30000000)).setAlwaysOnTop();
             }
-            if (LucidityConfig.isEnabled(LucidityConfig.Feature.SELECTIVE_RENDERING)) {
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.SELECTIVE_RENDERING)) {
+            if (LucidityConfig.selectiveAreas().isEmpty() && targetBlock != null) {
                 int chunkX = Math.floorDiv(targetBlock.getX(), 16) * 16;
                 int chunkZ = Math.floorDiv(targetBlock.getZ(), 16) * 16;
                 Gizmos.cuboid(new AABB(chunkX, targetBlock.getY() - 16, chunkZ,
                         chunkX + 16, targetBlock.getY() + 16, chunkZ + 16),
                         GizmoStyle.stroke(0xFF55AAFF, 2.0F)).setAlwaysOnTop();
                 Gizmos.billboardTextOverBlock("Selective region", targetBlock, 0xFF55AAFF, 0, 1.0F).setAlwaysOnTop();
+            } else {
+                for (LucidityConfig.Area area : LucidityConfig.selectiveAreas()) {
+                    Gizmos.cuboid(area.box(), GizmoStyle.stroke(0xFF55AAFF, 2.0F)).setAlwaysOnTop();
+                    Gizmos.billboardText("Selective region", area.box().getCenter(), net.minecraft.gizmos.TextGizmo.Style.forColorAndCentered(0xFF55AAFF)).setAlwaysOnTop();
+                }
             }
         }
         if (LucidityConfig.isEnabled(LucidityConfig.Feature.SCULK_SENSOR_VISUALIZE)
@@ -410,9 +417,20 @@ public final class LucidityFeatureRuntime {
 
     public static long ticks() { return ticks; }
 
-    /** Returns whether a terrain block belongs to the currently selected 16x16x32 region. */
+    public static boolean addTargetSelection() {
+        if (targetBlock == null) return false;
+        LucidityConfig.addSelectiveArea(targetBlock);
+        return true;
+    }
+
+    /** Returns whether a terrain block belongs to any persisted selective region. */
     public static boolean isSelectivePosition(BlockPos pos) {
-        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.SELECTIVE_RENDERING) || targetBlock == null) return false;
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.SELECTIVE_RENDERING)) return false;
+        if (!LucidityConfig.selectiveAreas().isEmpty()) {
+            for (LucidityConfig.Area area : LucidityConfig.selectiveAreas()) if (area.contains(pos)) return true;
+            return false;
+        }
+        if (targetBlock == null) return false;
         int chunkX = Math.floorDiv(targetBlock.getX(), 16) * 16;
         int chunkZ = Math.floorDiv(targetBlock.getZ(), 16) * 16;
         return pos.getX() >= chunkX && pos.getX() < chunkX + 16
