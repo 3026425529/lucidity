@@ -43,6 +43,7 @@ public final class LucidityFeatureRuntime {
     private static int nearbyInvisible;
     private static long ticks;
     private static final List<BlockPos> sculkSensors = new ArrayList<>();
+    private static final List<BlockPos> creakingHearts = new ArrayList<>();
     private static final List<BlockPos> spawnCandidates = new ArrayList<>();
     private static final List<BlockPos> worldEaterTargets = new ArrayList<>();
 
@@ -57,6 +58,7 @@ public final class LucidityFeatureRuntime {
             targetEntity = null;
             nearbyEntities = nearbyItems = nearbyDragons = nearbyInvisible = 0;
             sculkSensors.clear();
+            creakingHearts.clear();
             return;
         }
 
@@ -69,6 +71,7 @@ public final class LucidityFeatureRuntime {
         if (ticks % 10 == 0) refreshSculkSensors(client);
         if (ticks % 10 == 0) refreshSpawnCandidates(client);
         if (ticks % 5 == 0) refreshWorldEaterTargets(client);
+        if (ticks % 20 == 0) refreshCreakingHearts(client);
 
         targetEntity = null;
         if (client.hitResult instanceof BlockHitResult blockHit && client.hitResult.getType() != HitResult.Type.MISS) {
@@ -119,6 +122,15 @@ public final class LucidityFeatureRuntime {
             BlockPos pos = BlockPos.containing(start.add(direction.scale(i)));
             BlockState state = client.level.getBlockState(pos);
             if (!state.isAir() && state.getDestroySpeed(client.level, pos) >= 0.0F) worldEaterTargets.add(pos);
+        }
+    }
+
+    private static void refreshCreakingHearts(Minecraft client) {
+        creakingHearts.clear();
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.CREAKING_HEART_INDICATOR)) return;
+        BlockPos center = client.player.blockPosition();
+        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-24, -12, -24), center.offset(24, 12, 24))) {
+            if (client.level.getBlockState(pos).is(Blocks.CREAKING_HEART)) creakingHearts.add(pos.immutable());
         }
     }
 
@@ -302,13 +314,10 @@ public final class LucidityFeatureRuntime {
 
     private static void emitCreakingHearts(Minecraft client) {
         if (!LucidityConfig.isEnabled(LucidityConfig.Feature.CREAKING_HEART_INDICATOR)) return;
-        BlockPos center = client.player.blockPosition();
-        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-24, -12, -24), center.offset(24, 12, 24))) {
-            if (client.level.getBlockState(pos).is(Blocks.CREAKING_HEART)) {
-                Gizmos.cuboid(pos, GizmoStyle.strokeAndFill(0xFFFF6688, 2.0F, 0x33550044)).setAlwaysOnTop();
-                Gizmos.circle(Vec3.atCenterOf(pos), 32.0F, GizmoStyle.stroke(0x55FF6688, 1.0F)).setAlwaysOnTop();
-                Gizmos.billboardTextOverBlock("Creaking heart", pos, 0xFFFFAACC, 0, 0.8F).setAlwaysOnTop();
-            }
+        for (BlockPos pos : creakingHearts) {
+            Gizmos.cuboid(pos, GizmoStyle.strokeAndFill(0xFFFF6688, 2.0F, 0x33550044)).setAlwaysOnTop();
+            Gizmos.circle(Vec3.atCenterOf(pos), 32.0F, GizmoStyle.stroke(0x55FF6688, 1.0F)).setAlwaysOnTop();
+            Gizmos.billboardTextOverBlock("Creaking heart", pos, 0xFFFFAACC, 0, 0.8F).setAlwaysOnTop();
         }
     }
 
