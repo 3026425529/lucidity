@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "ml.mypals.lucidity.mixin",
   "compatibilityLevel": "JAVA_25",
-  "client": ["LucidityGizmoMixin", "LuciditySelectiveRenderingMixin", "LuciditySelectiveFluidMixin", "LuciditySelectiveEntityMixin", "LuciditySelectiveParticleMixin", "LucidityBlockOffsetMixin", "LucidityZalgoMixin", "LucidityInvisibleEntityMixin", "LucidityFluidTransparencyMixin"],
+  "client": ["LucidityGizmoMixin", "LuciditySelectiveRenderingMixin", "LuciditySelectiveFluidMixin", "LuciditySelectiveEntityMixin", "LuciditySelectiveParticleMixin", "LucidityBlockOffsetMixin", "LucidityZalgoMixin", "LucidityInvisibleEntityMixin", "LucidityFluidTransparencyMixin", "LucidityWorldImageMixin"],
   "injectors": {"defaultRequire": 0}
 }
 
