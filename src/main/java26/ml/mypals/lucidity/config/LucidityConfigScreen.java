@@ -19,18 +19,18 @@ public final class LucidityConfigScreen extends Screen {
     protected void init() {
         int left = Math.max(8, (this.width - 600) / 2);
         int top = 28;
-        int columnWidth = 200;
+        int columnWidth = 150;
         LucidityConfig.Feature[] features = LucidityConfig.Feature.values();
         for (int index = 0; index < features.length; index++) {
             LucidityConfig.Feature feature = features[index];
-            int column = index % 3;
-            int row = index / 3;
+            int column = index % 4;
+            int row = index / 4;
             int x = left + column * columnWidth;
             int y = top + row * 22;
             this.addRenderableWidget(Button.builder(label(feature), button -> {
                 LucidityConfig.toggle(feature);
                 button.setMessage(label(feature));
-            }).bounds(x, y, 196, 20).build());
+            }).bounds(x, y, 146, 20).build());
         }
         this.addRenderableWidget(Button.builder(Component.literal("Save and close"), button -> onClose())
                 .bounds(this.width / 2 - 75, this.height - 28, 150, 20).build());
@@ -52,6 +52,7 @@ public final class LucidityConfigScreen extends Screen {
         Minecraft.getInstance().setScreenAndShow(parent);
     }
 }
+
 
 
 
