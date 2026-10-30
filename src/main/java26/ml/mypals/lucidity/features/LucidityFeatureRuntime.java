@@ -180,6 +180,7 @@ public final class LucidityFeatureRuntime {
         Minecraft client = Minecraft.getInstance();
         if (client.level == null || client.player == null) return;
         LuciditySoundListener.emitGizmos();
+        LucidityImageRenderer.emitWorldGizmos();
         if (targetBlock != null) {
             for (LucidityConfig.Feature feature : LucidityConfig.Feature.values()) {
                 if (!LucidityConfig.isEnabled(feature)) continue;
