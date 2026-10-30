@@ -7,7 +7,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.Entity;
@@ -138,7 +138,7 @@ public class ExplosionSimulatorManager {
                 entityExplosions.computeIfAbsent(entity,
                 e -> {
                     ExplosionBlockPredicateShape explosionBlockPredicateShape= new ExplosionBlockPredicateShape(Shape.RenderingType.BATCH);
-                    ShapeManagers.addShape(ResourceLocation.fromNamespaceAndPath(MOD_ID,"entity_explosion_markers"+entity.getStringUUID().toLowerCase()),explosionBlockPredicateShape);
+                    ShapeManagers.addShape(Identifier.fromNamespaceAndPath(MOD_ID,"entity_explosion_markers"+entity.getStringUUID().toLowerCase()),explosionBlockPredicateShape);
                     explosionBlockPredicateShape.submitSubShape();
                     return explosionBlockPredicateShape;
                 });
@@ -175,7 +175,7 @@ public class ExplosionSimulatorManager {
                 blockExplosions.computeIfAbsent(key,
                     k -> {
                     ExplosionBlockPredicateShape explosionBlockPredicateShape= new ExplosionBlockPredicateShape(Shape.RenderingType.BATCH);
-                        ShapeManagers.addShape(ResourceLocation.fromNamespaceAndPath(MOD_ID,"block_explosion_markers"+pos.hashCode()),explosionBlockPredicateShape);
+                        ShapeManagers.addShape(Identifier.fromNamespaceAndPath(MOD_ID,"block_explosion_markers"+pos.hashCode()),explosionBlockPredicateShape);
                         explosionBlockPredicateShape.submitSubShape();
                         return explosionBlockPredicateShape;
                 });
@@ -337,4 +337,3 @@ public class ExplosionSimulatorManager {
                 || block instanceof BellBlock;
     }
 }
-
