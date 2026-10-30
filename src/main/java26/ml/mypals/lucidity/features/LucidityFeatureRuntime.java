@@ -18,11 +18,13 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.gizmos.Gizmos;
 import net.minecraft.gizmos.GizmoStyle;
+import net.minecraft.gizmos.TextGizmo;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -328,7 +330,7 @@ public final class LucidityFeatureRuntime {
         if (!(state.getBlock() == Blocks.SAND || state.getBlock() == Blocks.RED_SAND || state.getBlock() == Blocks.GRAVEL
                 || state.getBlock() == Blocks.SUSPICIOUS_SAND || state.getBlock() == Blocks.SUSPICIOUS_GRAVEL)) return;
         BlockPos landing = targetBlock;
-        while (landing.getY() > client.level.getMinBuildHeight() + 1 && client.level.getBlockState(landing.below()).isAir()) landing = landing.below();
+        while (landing.getY() > -63 && client.level.getBlockState(landing.below()).isAir()) landing = landing.below();
         Gizmos.cuboid(landing, GizmoStyle.strokeAndFill(0xFFFFAA22, 2.0F, 0x33442200)).setAlwaysOnTop();
         Gizmos.line(Vec3.atCenterOf(targetBlock), Vec3.atCenterOf(landing), 0xFFFFAA22, 1.5F).setAlwaysOnTop();
     }
