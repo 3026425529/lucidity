@@ -27,6 +27,8 @@ public final class LucidityConfig {
     private static final Map<Feature, Boolean> VALUES = new EnumMap<>(Feature.class);
     private static final List<String> IMAGE_SOURCES = new ArrayList<>();
     private static final List<Area> SELECTIVE_AREAS = new ArrayList<>();
+    private static volatile List<String> IMAGE_SNAPSHOT = List.of();
+    private static volatile List<Area> AREA_SNAPSHOT = List.of();
 
     static {
         reset();
@@ -93,7 +95,13 @@ public final class LucidityConfig {
         VALUES.clear();
         IMAGE_SOURCES.clear();
         SELECTIVE_AREAS.clear();
+        updateSnapshots();
         for (Feature feature : Feature.values()) VALUES.put(feature, false);
+    }
+
+    private static void updateSnapshots() {
+        IMAGE_SNAPSHOT = List.copyOf(IMAGE_SOURCES);
+        AREA_SNAPSHOT = List.copyOf(SELECTIVE_AREAS);
     }
 
     public static boolean isEnabled(Feature feature) {
@@ -143,6 +151,7 @@ public final class LucidityConfig {
                             new BlockPos(area.get("max_x").getAsInt(), area.get("max_y").getAsInt(), area.get("max_z").getAsInt())));
                 }
             }
+            updateSnapshots();
         } catch (Exception error) {
             Lucidity.LOGGER.warn("Unable to load Lucidity configuration", error);
         }
@@ -175,17 +184,18 @@ public final class LucidityConfig {
     }
 
     public static List<String> imageSources() {
-        return Collections.unmodifiableList(new ArrayList<>(IMAGE_SOURCES));
+        return IMAGE_SNAPSHOT;
     }
 
     public static void setImageSources(List<String> sources) {
         IMAGE_SOURCES.clear();
         IMAGE_SOURCES.addAll(sources);
+        updateSnapshots();
         save();
     }
 
     public static List<Area> selectiveAreas() {
-        return Collections.unmodifiableList(new ArrayList<>(SELECTIVE_AREAS));
+        return AREA_SNAPSHOT;
     }
 
     public static void addSelectiveArea(BlockPos center) {
@@ -193,11 +203,13 @@ public final class LucidityConfig {
         int minZ = Math.floorDiv(center.getZ(), 16) * 16;
         SELECTIVE_AREAS.add(new Area(new BlockPos(minX, center.getY() - 16, minZ),
                 new BlockPos(minX + 15, center.getY() + 16, minZ + 15)));
+        updateSnapshots();
         save();
     }
 
     public static void clearSelectiveAreas() {
         SELECTIVE_AREAS.clear();
+        updateSnapshots();
         save();
     }
 }
