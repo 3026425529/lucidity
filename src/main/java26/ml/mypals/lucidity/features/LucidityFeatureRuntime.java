@@ -250,6 +250,16 @@ public final class LucidityFeatureRuntime {
     }
 
     public static long ticks() { return ticks; }
+
+    /** Returns whether a terrain block belongs to the currently selected 16x16x32 region. */
+    public static boolean isSelectivePosition(BlockPos pos) {
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.SELECTIVE_RENDERING) || targetBlock == null) return false;
+        int chunkX = Math.floorDiv(targetBlock.getX(), 16) * 16;
+        int chunkZ = Math.floorDiv(targetBlock.getZ(), 16) * 16;
+        return pos.getX() >= chunkX && pos.getX() < chunkX + 16
+                && pos.getZ() >= chunkZ && pos.getZ() < chunkZ + 16
+                && pos.getY() >= targetBlock.getY() - 16 && pos.getY() <= targetBlock.getY() + 16;
+    }
 }
 
 
