@@ -10,6 +10,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.gizmos.Gizmos;
+import net.minecraft.gizmos.GizmoStyle;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -110,6 +112,43 @@ public final class LucidityFeatureRuntime {
         };
     }
 
+    /** Emits lightweight outlines using the 26.3 gizmo API. */
+    public static void emitGizmos() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.level == null || client.player == null) return;
+        if (targetBlock != null) {
+            for (LucidityConfig.Feature feature : LucidityConfig.Feature.values()) {
+                if (!LucidityConfig.isEnabled(feature)) continue;
+                int color = switch (feature) {
+                    case FLUID_SOURCE_HIGHLIGHT, FLUID_TRANSPARENCY_OVERRIDE -> 0xFF3399FF;
+                    case SCULK_SENSOR_VISUALIZE, VIBRATION_TRACE, MICROTIMING_MARKER_VISUALIZER -> 0xFFAA44FF;
+                    case WORLD_EATER_MINE_HELPER, FALLING_BLOCK_PREVIEW -> 0xFFFFAA22;
+                    case VAULT_ITEM_DISPLAY, CONTAINER_SIGNAL_PREVIEW -> 0xFFFFDD33;
+                    default -> 0xFF55FF88;
+                };
+                Gizmos.cuboid(targetBlock, GizmoStyle.strokeAndFill(color, 1.5F, (color & 0x00FFFFFF) | 0x30000000)).setAlwaysOnTop();
+            }
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.EXTENDED_HITBOX) && targetEntity != null) {
+            Gizmos.cuboid(targetEntity.getBoundingBox(), GizmoStyle.stroke(0xFFFF3333, 2.0F)).setAlwaysOnTop();
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.ITEM_MERG_RANGE_VISUALIZE)) {
+            client.level.getEntities(client.player, client.player.getBoundingBox().inflate(16.0), entity -> entity instanceof ItemEntity)
+                    .forEach(entity -> Gizmos.cuboid(entity.getBoundingBox(), GizmoStyle.stroke(0xFFFFFF33, 1.0F)).setAlwaysOnTop());
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.ENDER_DRAGON_WAYPOINTS_VISUALIZE)
+                || LucidityConfig.isEnabled(LucidityConfig.Feature.ENDER_DRAGON_DESTRUCTION_VISUALIZE)) {
+            client.level.getEntities(client.player, client.player.getBoundingBox().inflate(256.0), entity -> entity instanceof EnderDragon)
+                    .forEach(entity -> {
+                        Gizmos.cuboid(entity.getBoundingBox(), GizmoStyle.stroke(0xFFFF55FF, 2.0F)).setAlwaysOnTop();
+                        Gizmos.billboardTextOverMob(entity, 0xFFFFFFFF, "Ender Dragon", 0, 1.0F).setAlwaysOnTop();
+                    });
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.INVISIBLE_ENTITY_OVERRIDE)) {
+            client.level.getEntities(client.player, client.player.getBoundingBox().inflate(16.0), Entity::isInvisible)
+                    .forEach(entity -> Gizmos.cuboid(entity.getBoundingBox(), GizmoStyle.stroke(0xFF66CCFF, 1.5F)).setAlwaysOnTop());
+        }
+    }
     private static String playerRotation() {
         Minecraft client = Minecraft.getInstance();
         return client.player == null ? "unavailable" : String.format("yaw %.1f°", client.player.getYRot());
@@ -127,4 +166,6 @@ public final class LucidityFeatureRuntime {
 
     public static long ticks() { return ticks; }
 }
+
+
 
