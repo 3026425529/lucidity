@@ -132,7 +132,7 @@ public final class LucidityFeatureRuntime {
             case INVISIBLE_ENTITY_OVERRIDE -> nearbyInvisible + " invisible entities within 16 blocks";
             case MICROTIMING_MARKER_VISUALIZER -> "client tick " + ticks;
             case EXPLOSION_VISUALIZE -> "explosive entities and beds/anchors monitored";
-            case IMAGE_RENDERING -> "image sources ready in config";
+            case IMAGE_RENDERING -> LucidityImageRenderer.loadedCount() + " image textures loaded";
             case SELECTIVE_RENDERING -> "gizmo selection overlay enabled";
         };
     }
