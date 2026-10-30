@@ -52,7 +52,10 @@ public final class LucidityConfig {
         BLOCK_EVENT_VISUALIZE("Block event visualizer", "block_event_visualize"),
         MOB_SPAWN_VISUALIZE("Mob spawn visualizer", "mob_spawn_visualize"),
         INVISIBLE_ENTITY_OVERRIDE("Invisible entity transparency", "invisible_entity_override"),
-        MICROTIMING_MARKER_VISUALIZER("Carpet TIS microtiming markers", "microtiming_markers");
+        MICROTIMING_MARKER_VISUALIZER("Carpet TIS microtiming markers", "microtiming_markers"),
+        EXPLOSION_VISUALIZE("Explosion visualizer", "explosion_visualizer"),
+        IMAGE_RENDERING("Image renderer", "image_rendering"),
+        SELECTIVE_RENDERING("Selective rendering", "selective_rendering");
 
         private final String label;
         private final String key;
@@ -113,4 +116,5 @@ public final class LucidityConfig {
         }
     }
 }
+
 
