@@ -271,6 +271,14 @@ public final class LucidityFeatureRuntime {
             client.level.getEntities(client.player, client.player.getBoundingBox().inflate(16.0), Entity::isInvisible)
                     .forEach(entity -> Gizmos.cuboid(entity.getBoundingBox(), GizmoStyle.stroke(0xFF66CCFF, 1.5F)).setAlwaysOnTop());
         }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.ACCURATE_ENTITY_SHADOW)) {
+            client.level.getEntities(client.player, client.player.getBoundingBox().inflate(24.0), entity -> entity != client.player)
+                    .forEach(entity -> {
+                        AABB box = entity.getBoundingBox();
+                        AABB shadow = new AABB(box.minX, box.minY + 0.015, box.minZ, box.maxX, box.minY + 0.035, box.maxZ);
+                        Gizmos.cuboid(shadow, GizmoStyle.fill(0x55000000)).setAlwaysOnTop();
+                    });
+        }
 
         emitCreakingHearts(client);
         emitVaultAndSpawnerInfo(client);
