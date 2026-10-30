@@ -43,9 +43,10 @@ public final class Lucidity implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             LucidityFeatureRuntime.tick(client);
             while (OPEN_CONFIG.consumeClick()) {
-                client.setScreenAndShow(new ml.mypals.lucidity.config.LucidityConfigScreen(client.screen));
+                client.setScreenAndShow(new ml.mypals.lucidity.config.LucidityConfigScreen(null));
             }
         });
     }
 }
+
 
