@@ -8,6 +8,7 @@
   "license": "MIT",
   "icon": "assets/lucidity/icon.png",
   "environment": "client",
+  "mixins": ["lucidity.mixins.json"],
   "entrypoints": {
     "client": ["ml.mypals.lucidity.Lucidity"],
     "modmenu": ["ml.mypals.lucidity.config.modmenu.LucidityModMenuImpl"]
@@ -24,3 +25,6 @@
     "modmenu": ">=21.0.0"
   }
 }
+
+
+
