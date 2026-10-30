@@ -159,7 +159,7 @@ public final class LucidityFeatureRuntime {
                 || LucidityConfig.isEnabled(LucidityConfig.Feature.VIBRATION_TRACE)) {
             for (BlockPos pos : sculkSensors) {
                 Gizmos.cuboid(pos, GizmoStyle.stroke(0xFFAA44FF, 1.5F)).setAlwaysOnTop();
-                Gizmos.circle(pos.getCenter().add(0.0, 0.5, 0.0), 18.0F, GizmoStyle.stroke(0x66AA44FF, 1.0F)).setAlwaysOnTop();
+                Gizmos.circle(net.minecraft.world.phys.Vec3.atCenterOf(pos).add(0.0, 0.5, 0.0), 18.0F, GizmoStyle.stroke(0x66AA44FF, 1.0F)).setAlwaysOnTop();
             }
         }
         if (LucidityConfig.isEnabled(LucidityConfig.Feature.ENDER_DRAGON_WAYPOINTS_VISUALIZE)
@@ -243,6 +243,7 @@ public final class LucidityFeatureRuntime {
 
     public static long ticks() { return ticks; }
 }
+
 
 
 
