@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /** A small 26.3-native configuration store. It keeps the complete Lucidity feature list
@@ -140,5 +141,6 @@ public final class LucidityConfig {
         save();
     }
 }
+
 
 
