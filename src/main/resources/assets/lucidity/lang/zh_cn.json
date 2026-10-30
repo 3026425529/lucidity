@@ -184,5 +184,9 @@
   "lucidity.info.wand.switchRenderingLast": "上一个渲染模式",
   "lucidity.info.wand.switchRenderingNext": "下一个渲染模式",
   "lucidity.info.wand.switchWandMode": "切换魔杖模式",
-  "lucidity.title.configs": "我的视界 %s"
+  "lucidity.title.configs": "我的视界 %s",
+  "key.lucidity.open_config": "打开 Lucidity 配置",
+  "key.lucidity.add_selective_area": "添加选择性渲染区域",
+  "key.lucidity.clear_selective_areas": "清除选择性渲染区域"
 }
+
