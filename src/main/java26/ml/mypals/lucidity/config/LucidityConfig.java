@@ -3,6 +3,7 @@ package ml.mypals.lucidity.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
 import ml.mypals.lucidity.Lucidity;
@@ -11,6 +12,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 
 /** A small 26.3-native configuration store. It keeps the complete Lucidity feature list
@@ -19,6 +22,7 @@ public final class LucidityConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("lucidity.json");
     private static final Map<Feature, Boolean> VALUES = new EnumMap<>(Feature.class);
+    private static final List<String> IMAGE_SOURCES = new ArrayList<>();
 
     static {
         reset();
@@ -66,6 +70,7 @@ public final class LucidityConfig {
 
     public static void reset() {
         VALUES.clear();
+        IMAGE_SOURCES.clear();
         for (Feature feature : Feature.values()) VALUES.put(feature, false);
     }
 
@@ -100,6 +105,12 @@ public final class LucidityConfig {
                     VALUES.put(feature, object.get(feature.key()).getAsBoolean());
                 }
             }
+            IMAGE_SOURCES.clear();
+            if (object.has("images") && object.get("images").isJsonArray()) {
+                for (var entry : object.getAsJsonArray("images")) {
+                    if (entry.isJsonPrimitive()) IMAGE_SOURCES.add(entry.getAsString());
+                }
+            }
         } catch (Exception error) {
             Lucidity.LOGGER.warn("Unable to load Lucidity configuration", error);
         }
@@ -110,10 +121,23 @@ public final class LucidityConfig {
             Files.createDirectories(FILE.getParent());
             JsonObject object = new JsonObject();
             for (Feature feature : Feature.values()) object.addProperty(feature.key(), isEnabled(feature));
+            JsonArray images = new JsonArray();
+            IMAGE_SOURCES.forEach(images::add);
+            object.add("images", images);
             Files.writeString(FILE, GSON.toJson(object));
         } catch (IOException error) {
             Lucidity.LOGGER.warn("Unable to save Lucidity configuration", error);
         }
+    }
+
+    public static List<String> imageSources() {
+        return Collections.unmodifiableList(new ArrayList<>(IMAGE_SOURCES));
+    }
+
+    public static void setImageSources(List<String> sources) {
+        IMAGE_SOURCES.clear();
+        IMAGE_SOURCES.addAll(sources);
+        save();
     }
 }
 
