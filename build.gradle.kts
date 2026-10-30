@@ -31,8 +31,6 @@ dependencies {
 sourceSets {
     main {
         java.setSrcDirs(listOf("src/main/java26"))
-        java.exclude("ml/mypals/lucidity/mixin/**")
-        java.exclude("ml/mypals/lucidity/datagen/**")
     }
 }
 
@@ -60,5 +58,6 @@ publishing {
         create<MavenPublication>("mavenJava") { from(components["java"]) }
     }
 }
+
 
 
