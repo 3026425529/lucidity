@@ -18,6 +18,9 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Transformation;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -119,6 +122,11 @@ public final class LucidityImageRenderer {
             Placement p = entry.getValue();
             PoseStack pose = new PoseStack();
             pose.translate(p.position.x - cameraPosition.x, p.position.y - cameraPosition.y, p.position.z - cameraPosition.z);
+            if (p.rotation.length == 4) {
+                pose.mulPose(new Transformation(new Vector3f(),
+                        new Quaternionf((float) p.rotation[0], (float) p.rotation[1], (float) p.rotation[2], (float) p.rotation[3]),
+                        new Vector3f(1.0F, 1.0F, 1.0F), new Quaternionf()));
+            }
             output.submitCustomGeometry(pose, RenderTypes.entityTranslucent(texture), (stackPose, consumer) -> {
                 float halfWidth = (float) p.width * 0.5F;
                 float halfHeight = (float) p.height * 0.5F;
