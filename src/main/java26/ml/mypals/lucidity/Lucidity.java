@@ -3,6 +3,7 @@ package ml.mypals.lucidity;
 import com.mojang.blaze3d.platform.InputConstants;
 import ml.mypals.lucidity.config.LucidityConfig;
 import ml.mypals.lucidity.features.LucidityFeatureRuntime;
+import ml.mypals.lucidity.features.LuciditySoundListener;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -20,6 +21,7 @@ public final class Lucidity implements ClientModInitializer {
     private static final KeyMapping OPEN_CONFIG = new KeyMapping(
             "key.lucidity.open_config", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_V, KeyMapping.Category.MISC);
+    private static boolean soundListenerRegistered;
 
     @Override
     public void onInitializeClient() {
@@ -41,6 +43,10 @@ public final class Lucidity implements ClientModInitializer {
                 });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (!soundListenerRegistered) {
+                client.getSoundManager().addListener(LuciditySoundListener.INSTANCE);
+                soundListenerRegistered = true;
+            }
             LucidityFeatureRuntime.tick(client);
             while (OPEN_CONFIG.consumeClick()) {
                 client.setScreenAndShow(new ml.mypals.lucidity.config.LucidityConfigScreen(null));
