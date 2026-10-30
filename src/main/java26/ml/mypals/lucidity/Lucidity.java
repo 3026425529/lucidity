@@ -22,6 +22,12 @@ public final class Lucidity implements ClientModInitializer {
     private static final KeyMapping OPEN_CONFIG = new KeyMapping(
             "key.lucidity.open_config", InputConstants.Type.KEYBOARD,
             InputConstants.KEY_V, KeyMapping.Category.MISC);
+    private static final KeyMapping ADD_SELECTIVE_AREA = new KeyMapping(
+            "key.lucidity.add_selective_area", InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_B, KeyMapping.Category.MISC);
+    private static final KeyMapping CLEAR_SELECTIVE_AREAS = new KeyMapping(
+            "key.lucidity.clear_selective_areas", InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_N, KeyMapping.Category.MISC);
     private static boolean soundListenerRegistered;
 
     @Override
@@ -51,6 +57,14 @@ public final class Lucidity implements ClientModInitializer {
             }
             LucidityFeatureRuntime.tick(client);
             LucidityImageRenderer.tick(client);
+            while (ADD_SELECTIVE_AREA.consumeClick()) {
+                if (LucidityConfig.isEnabled(LucidityConfig.Feature.SELECTIVE_RENDERING)) {
+                    LucidityFeatureRuntime.addTargetSelection();
+                }
+            }
+            while (CLEAR_SELECTIVE_AREAS.consumeClick()) {
+                LucidityConfig.clearSelectiveAreas();
+            }
             while (OPEN_CONFIG.consumeClick()) {
                 client.setScreenAndShow(new ml.mypals.lucidity.config.LucidityConfigScreen(null));
             }
