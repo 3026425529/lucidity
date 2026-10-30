@@ -7,9 +7,16 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.piston.PistonBaseBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
+import net.minecraft.world.level.block.entity.vault.VaultBlockEntity;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -34,6 +41,8 @@ public final class LucidityFeatureRuntime {
     private static int nearbyInvisible;
     private static long ticks;
     private static final List<BlockPos> sculkSensors = new ArrayList<>();
+    private static final List<BlockPos> spawnCandidates = new ArrayList<>();
+    private static final List<BlockPos> worldEaterTargets = new ArrayList<>();
 
     private LucidityFeatureRuntime() {}
 
@@ -56,6 +65,8 @@ public final class LucidityFeatureRuntime {
         nearbyDragons = client.level.getEntities(client.player,
                 client.player.getBoundingBox().inflate(256.0), entity -> entity instanceof EnderDragon).size();
         if (ticks % 10 == 0) refreshSculkSensors(client);
+        if (ticks % 10 == 0) refreshSpawnCandidates(client);
+        if (ticks % 5 == 0) refreshWorldEaterTargets(client);
 
         targetEntity = null;
         if (client.hitResult instanceof BlockHitResult blockHit && client.hitResult.getType() != HitResult.Type.MISS) {
@@ -81,6 +92,31 @@ public final class LucidityFeatureRuntime {
             if (block == Blocks.SCULK_SENSOR || block == Blocks.CALIBRATED_SCULK_SENSOR || block == Blocks.SCULK_SHRIEKER) {
                 sculkSensors.add(pos.immutable());
             }
+        }
+    }
+
+    private static void refreshSpawnCandidates(Minecraft client) {
+        spawnCandidates.clear();
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.MOB_SPAWN_VISUALIZE)) return;
+        BlockPos center = client.player.blockPosition();
+        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-16, -4, -16), center.offset(16, 4, 16))) {
+            if (client.level.getBlockState(pos).isAir() && client.level.getMaxLocalRawBrightness(pos) <= 7
+                    && client.level.getBlockState(pos.below()).isSolidRender()) {
+                spawnCandidates.add(pos.immutable());
+            }
+            if (spawnCandidates.size() >= 256) return;
+        }
+    }
+
+    private static void refreshWorldEaterTargets(Minecraft client) {
+        worldEaterTargets.clear();
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.WORLD_EATER_MINE_HELPER)) return;
+        Vec3 start = client.player.getEyePosition();
+        Vec3 direction = client.player.getViewVector(1.0F);
+        for (int i = 1; i <= 32; i++) {
+            BlockPos pos = BlockPos.containing(start.add(direction.scale(i)));
+            BlockState state = client.level.getBlockState(pos);
+            if (!state.isAir() && state.getDestroySpeed(client.level, pos) >= 0.0F) worldEaterTargets.add(pos);
         }
     }
 
@@ -233,6 +269,118 @@ public final class LucidityFeatureRuntime {
             client.level.getEntities(client.player, client.player.getBoundingBox().inflate(16.0), Entity::isInvisible)
                     .forEach(entity -> Gizmos.cuboid(entity.getBoundingBox(), GizmoStyle.stroke(0xFF66CCFF, 1.5F)).setAlwaysOnTop());
         }
+
+        emitCreakingHearts(client);
+        emitVaultAndSpawnerInfo(client);
+        emitContainerSignal(client);
+        emitFallingBlockPreview(client);
+        emitPistonTarget(client);
+        emitSpawnCandidates();
+        emitWorldEaterTargets();
+        emitBoatRestriction(client);
+        emitFluidTransparency(client);
+        emitBlockEventInfo(client);
+    }
+
+    private static void emitCreakingHearts(Minecraft client) {
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.CREAKING_HEART_INDICATOR)) return;
+        BlockPos center = client.player.blockPosition();
+        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-24, -12, -24), center.offset(24, 12, 24))) {
+            if (client.level.getBlockState(pos).is(Blocks.CREAKING_HEART)) {
+                Gizmos.cuboid(pos, GizmoStyle.strokeAndFill(0xFFFF6688, 2.0F, 0x33550044)).setAlwaysOnTop();
+                Gizmos.circle(Vec3.atCenterOf(pos), 32.0F, GizmoStyle.stroke(0x55FF6688, 1.0F)).setAlwaysOnTop();
+                Gizmos.billboardTextOverBlock("Creaking heart", pos, 0xFFFFAACC, 0, 0.8F).setAlwaysOnTop();
+            }
+        }
+    }
+
+    private static void emitVaultAndSpawnerInfo(Minecraft client) {
+        if (targetBlock == null) return;
+        BlockState state = client.level.getBlockState(targetBlock);
+        BlockEntity entity = client.level.getBlockEntity(targetBlock);
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.VAULT_ITEM_DISPLAY) && state.is(Blocks.VAULT)) {
+            String item = "vault item unavailable";
+            if (entity instanceof VaultBlockEntity vault && vault.getSharedData().hasDisplayItem()) {
+                item = vault.getSharedData().getDisplayItem().getHoverName().getString();
+            }
+            Gizmos.billboardTextOverBlock(item, targetBlock, 0xFFFFDD33, 1, 0.9F).setAlwaysOnTop();
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.VAULT_ITEM_DISPLAY) && state.is(Blocks.TRIAL_SPAWNER)) {
+            String text = entity instanceof TrialSpawnerBlockEntity spawner ? "trial: " + spawner.getState().toString() : "trial spawner";
+            Gizmos.billboardTextOverBlock(text, targetBlock, 0xFFFFDD33, 1, 0.8F).setAlwaysOnTop();
+        }
+    }
+
+    private static void emitContainerSignal(Minecraft client) {
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.CONTAINER_SIGNAL_PREVIEW) || targetBlock == null) return;
+        BlockState state = client.level.getBlockState(targetBlock);
+        int signal = Math.max(state.getSignal(client.level, targetBlock, Direction.UP),
+                state.getAnalogOutputSignal(client.level, targetBlock, Direction.UP));
+        if (signal > 0 || !state.isAir()) {
+            Gizmos.billboardTextOverBlock("signal " + signal, targetBlock, 0xFFFF6633, 2, 0.8F).setAlwaysOnTop();
+            Gizmos.cuboid(targetBlock, GizmoStyle.stroke(signal > 0 ? 0xFFFF3322 : 0xFF777777, 1.2F)).setAlwaysOnTop();
+        }
+    }
+
+    private static void emitFallingBlockPreview(Minecraft client) {
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.FALLING_BLOCK_PREVIEW) || targetBlock == null) return;
+        BlockState state = client.level.getBlockState(targetBlock);
+        if (!(state.getBlock() == Blocks.SAND || state.getBlock() == Blocks.RED_SAND || state.getBlock() == Blocks.GRAVEL
+                || state.getBlock() == Blocks.SUSPICIOUS_SAND || state.getBlock() == Blocks.SUSPICIOUS_GRAVEL)) return;
+        BlockPos landing = targetBlock;
+        while (landing.getY() > client.level.getMinBuildHeight() + 1 && client.level.getBlockState(landing.below()).isAir()) landing = landing.below();
+        Gizmos.cuboid(landing, GizmoStyle.strokeAndFill(0xFFFFAA22, 2.0F, 0x33442200)).setAlwaysOnTop();
+        Gizmos.line(Vec3.atCenterOf(targetBlock), Vec3.atCenterOf(landing), 0xFFFFAA22, 1.5F).setAlwaysOnTop();
+    }
+
+    private static void emitPistonTarget(Minecraft client) {
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.B36_TARGET_PREVIEW) || targetBlock == null) return;
+        BlockState state = client.level.getBlockState(targetBlock);
+        if (state.getBlock() != Blocks.PISTON && state.getBlock() != Blocks.STICKY_PISTON && state.getBlock() != Blocks.PISTON_HEAD
+                && state.getBlock() != Blocks.MOVING_PISTON) return;
+        Direction facing = state.hasProperty(PistonBaseBlock.FACING) ? state.getValue(PistonBaseBlock.FACING) : Direction.NORTH;
+        BlockPos head = targetBlock.relative(facing);
+        Gizmos.cuboid(head, GizmoStyle.strokeAndFill(0xFF33AAFF, 2.0F, 0x33224466)).setAlwaysOnTop();
+        Gizmos.arrow(Vec3.atCenterOf(targetBlock), Vec3.atCenterOf(head), 0xFF33AAFF, 2.0F).setAlwaysOnTop();
+    }
+
+    private static void emitSpawnCandidates() {
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.MOB_SPAWN_VISUALIZE)) return;
+        for (BlockPos pos : spawnCandidates) Gizmos.cuboid(pos, GizmoStyle.stroke(0xFF66FF66, 1.0F)).setAlwaysOnTop();
+    }
+
+    private static void emitWorldEaterTargets() {
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.WORLD_EATER_MINE_HELPER)) return;
+        for (BlockPos pos : worldEaterTargets) Gizmos.cuboid(pos, GizmoStyle.stroke(0xFFFFAA22, 1.5F)).setAlwaysOnTop();
+        if (!worldEaterTargets.isEmpty()) Gizmos.billboardTextOverBlock("mine path " + worldEaterTargets.size(), worldEaterTargets.get(0), 0xFFFFAA22, 0, 0.8F).setAlwaysOnTop();
+    }
+
+    private static void emitBoatRestriction(Minecraft client) {
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.BOAT_VIEW_RESTRICTION) || !(client.player.getVehicle() instanceof AbstractBoat boat)) return;
+        Vec3 center = boat.position().add(0.0, 0.8, 0.0);
+        float yaw = boat.getYRot();
+        Vec3 last = center;
+        for (int i = 0; i <= 24; i++) {
+            double angle = Math.toRadians(yaw - 105.0 + i * 210.0 / 24.0);
+            Vec3 next = center.add(-Math.sin(angle) * 2.0, 0.0, Math.cos(angle) * 2.0);
+            Gizmos.line(last, next, 0xFFFFFFFF, 1.5F).setAlwaysOnTop();
+            last = next;
+        }
+        Gizmos.billboardText("boat view arc", center.add(0, 0.5, 0), TextGizmo.Style.whiteAndCentered()).setAlwaysOnTop();
+    }
+
+    private static void emitFluidTransparency(Minecraft client) {
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.FLUID_TRANSPARENCY_OVERRIDE) || targetBlock == null) return;
+        if (!client.level.getFluidState(targetBlock).isEmpty()) {
+            Gizmos.cuboid(targetBlock, GizmoStyle.strokeAndFill(0xFF3399FF, 1.0F, 0x443399FF)).setAlwaysOnTop();
+            Gizmos.billboardTextOverBlock("fluid 50%", targetBlock, 0xFF99CCFF, 0, 0.8F).setAlwaysOnTop();
+        }
+    }
+
+    private static void emitBlockEventInfo(Minecraft client) {
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.BLOCK_EVENT_VISUALIZE) || targetBlock == null) return;
+        BlockState state = client.level.getBlockState(targetBlock);
+        Gizmos.billboardTextOverBlock(state.getBlock().getName().getString() + " event", targetBlock, 0xFFFF55AA, 3, 0.75F).setAlwaysOnTop();
     }
     private static String playerRotation() {
         Minecraft client = Minecraft.getInstance();
