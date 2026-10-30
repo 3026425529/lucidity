@@ -184,5 +184,9 @@
   "lucidity.info.wand.switchRenderingLast": "Previous rendering mode",
   "lucidity.info.wand.switchRenderingNext": "Next rendering mode",
   "lucidity.info.wand.switchWandMode": "Switch wand mode",
-  "lucidity.title.configs": "Lucidity %s"
+  "lucidity.title.configs": "Lucidity %s",
+  "key.lucidity.open_config": "Open Lucidity Config",
+  "key.lucidity.add_selective_area": "Add Selective Area",
+  "key.lucidity.clear_selective_areas": "Clear Selective Areas"
 }
+
