@@ -3,9 +3,10 @@
   "minVersion": "0.8",
   "package": "ml.mypals.lucidity.mixin",
   "compatibilityLevel": "JAVA_25",
-  "client": ["LucidityGizmoMixin", "LuciditySelectiveRenderingMixin", "LuciditySelectiveFluidMixin"],
+  "client": ["LucidityGizmoMixin", "LuciditySelectiveRenderingMixin", "LuciditySelectiveFluidMixin", "LuciditySelectiveEntityMixin"],
   "injectors": {"defaultRequire": 0}
 }
+
 
 
 
