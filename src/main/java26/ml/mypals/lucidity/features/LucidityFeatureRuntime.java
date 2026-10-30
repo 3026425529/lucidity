@@ -8,6 +8,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -32,6 +33,7 @@ public final class LucidityFeatureRuntime {
     private static int nearbyDragons;
     private static int nearbyInvisible;
     private static long ticks;
+    private static final List<BlockPos> sculkSensors = new ArrayList<>();
 
     private LucidityFeatureRuntime() {}
 
@@ -43,6 +45,7 @@ public final class LucidityFeatureRuntime {
             targetName = "";
             targetEntity = null;
             nearbyEntities = nearbyItems = nearbyDragons = nearbyInvisible = 0;
+            sculkSensors.clear();
             return;
         }
 
@@ -52,6 +55,7 @@ public final class LucidityFeatureRuntime {
         nearbyInvisible = client.level.getEntities(client.player, nearby, Entity::isInvisible).size();
         nearbyDragons = client.level.getEntities(client.player,
                 client.player.getBoundingBox().inflate(256.0), entity -> entity instanceof EnderDragon).size();
+        if (ticks % 10 == 0) refreshSculkSensors(client);
 
         targetEntity = null;
         if (client.hitResult instanceof BlockHitResult blockHit && client.hitResult.getType() != HitResult.Type.MISS) {
@@ -62,6 +66,20 @@ public final class LucidityFeatureRuntime {
             targetName = "";
             if (client.hitResult instanceof EntityHitResult entityHit && client.hitResult.getType() != HitResult.Type.MISS) {
                 targetEntity = entityHit.getEntity();
+            }
+        }
+    }
+
+    private static void refreshSculkSensors(Minecraft client) {
+        sculkSensors.clear();
+        if (!LucidityConfig.isEnabled(LucidityConfig.Feature.SCULK_SENSOR_VISUALIZE)
+                && !LucidityConfig.isEnabled(LucidityConfig.Feature.VIBRATION_TRACE)) return;
+        BlockPos center = client.player.blockPosition();
+        int range = 18;
+        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-range, -range, -range), center.offset(range, range, range))) {
+            var block = client.level.getBlockState(pos).getBlock();
+            if (block == Blocks.SCULK_SENSOR || block == Blocks.CALIBRATED_SCULK_SENSOR || block == Blocks.SCULK_SHRIEKER) {
+                sculkSensors.add(pos.immutable());
             }
         }
     }
@@ -135,6 +153,25 @@ public final class LucidityFeatureRuntime {
                     default -> 0xFF55FF88;
                 };
                 Gizmos.cuboid(targetBlock, GizmoStyle.strokeAndFill(color, 1.5F, (color & 0x00FFFFFF) | 0x30000000)).setAlwaysOnTop();
+            }
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.SCULK_SENSOR_VISUALIZE)
+                || LucidityConfig.isEnabled(LucidityConfig.Feature.VIBRATION_TRACE)) {
+            for (BlockPos pos : sculkSensors) {
+                Gizmos.cuboid(pos, GizmoStyle.stroke(0xFFAA44FF, 1.5F)).setAlwaysOnTop();
+                Gizmos.circle(pos.getCenter().add(0.0, 0.5, 0.0), 18.0F, GizmoStyle.stroke(0x66AA44FF, 1.0F)).setAlwaysOnTop();
+            }
+        }
+        if (LucidityConfig.isEnabled(LucidityConfig.Feature.ENDER_DRAGON_WAYPOINTS_VISUALIZE)
+                && client.level.dimension().toString().contains("end")) {
+            for (int i = 0; i < 24; i++) {
+                double radius = i < 12 ? 60.0 : i < 20 ? 40.0 : 20.0;
+                double angle = -Math.PI + (i < 12 ? 2.0 * Math.PI / 12.0 * i : i < 20 ? Math.PI / 4.0 * (i - 12) : Math.PI / 2.0 * (i - 20));
+                int x = (int) Math.floor(radius * Math.cos(angle));
+                int z = (int) Math.floor(radius * Math.sin(angle));
+                int y = Math.max(73, client.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z)).getY() + (i < 12 ? 5 : i < 20 ? 15 : 5));
+                BlockPos node = new BlockPos(x, y, z);
+                Gizmos.cuboid(node, GizmoStyle.stroke(i < 12 ? 0xFFFFAA33 : 0xFF33AAFF, 1.5F)).setAlwaysOnTop();
             }
         }
         if (LucidityConfig.isEnabled(LucidityConfig.Feature.EXTENDED_HITBOX) && targetEntity != null) {
