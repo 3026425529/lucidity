@@ -154,6 +154,14 @@ public final class LucidityFeatureRuntime {
                 };
                 Gizmos.cuboid(targetBlock, GizmoStyle.strokeAndFill(color, 1.5F, (color & 0x00FFFFFF) | 0x30000000)).setAlwaysOnTop();
             }
+            if (LucidityConfig.isEnabled(LucidityConfig.Feature.SELECTIVE_RENDERING)) {
+                int chunkX = Math.floorDiv(targetBlock.getX(), 16) * 16;
+                int chunkZ = Math.floorDiv(targetBlock.getZ(), 16) * 16;
+                Gizmos.cuboid(new AABB(chunkX, targetBlock.getY() - 16, chunkZ,
+                        chunkX + 16, targetBlock.getY() + 16, chunkZ + 16),
+                        GizmoStyle.stroke(0xFF55AAFF, 2.0F)).setAlwaysOnTop();
+                Gizmos.billboardTextOverBlock("Selective region", targetBlock, 0xFF55AAFF, 0, 1.0F).setAlwaysOnTop();
+            }
         }
         if (LucidityConfig.isEnabled(LucidityConfig.Feature.SCULK_SENSOR_VISUALIZE)
                 || LucidityConfig.isEnabled(LucidityConfig.Feature.VIBRATION_TRACE)) {
